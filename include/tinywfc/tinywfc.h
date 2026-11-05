@@ -110,8 +110,8 @@ public:
 
    template <class Function>
    explicit JoiningThread(Function&& function)
-       : _thread([function = std::forward<Function>(function), token = _source.get_token()]() mutable { function(token); })
    {
+      _thread = std::thread{[function = std::forward<Function>(function), token = _source.get_token()]() mutable { function(token); }};
    }
 
    JoiningThread(JoiningThread&&) noexcept = default;
