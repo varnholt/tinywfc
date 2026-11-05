@@ -1,7 +1,9 @@
 #pragma once
 
-// the city tileset of the testbed: roads, canals, bridges, parks and buildings on the ground layer, floors and roofs
-// stacked above. it only describes tiles and rules; meshes are built from it in meshes.cpp.
+// the city tileset of the testbed, fully 3d: roads, canals, bridges and parks on the ground layer; buildings stacked from
+// a ground floor, any number of floors and one of three roofs; an elevated road on pillars with ramps leading up from
+// the streets. every tile has a socket on each of its six faces, up and down included, and two tiles fit where the
+// touching sockets are equal. this file only describes tiles and rules; meshes.cpp builds their geometry.
 
 #include <cstdint>
 #include <expected>
@@ -16,15 +18,18 @@ namespace city
 enum class Kind : uint8_t
 {
    Air,
-   Road,    //!< straight, curve, t junction or crossing, depending on the road sides
+   Road,    //!< straight, curve, t junction, crossing or underpass, depending on the road sides
    Canal,   //!< straight or curve
    Bridge,  //!< a road crossing a canal
    Park,
-   Building,  //!< the ground floor of a building
+   Building,  //!< the ground floor of a building, with a door
    Floor,     //!< one more storey
    FlatRoof,
    GardenRoof,
    PitchedRoof,
+   Ramp,     //!< a street rising towards an elevated road
+   RampTop,  //!< the upper half of a ramp
+   Deck,     //!< the elevated road
 };
 
 /// \brief horizontal sides as bits, in the order +x, -x, +z, -z
@@ -42,6 +47,7 @@ struct TileInfo
    int32_t _quarter_turns{0};  //!< rotation around +y, the same one tinywfc::rotateY applies to the sockets
    uint8_t _road_sides{0};     //!< sides a road leaves the tile
    uint8_t _canal_sides{0};    //!< sides a canal leaves the tile
+   bool _pillar{false};        //!< carries an elevated road
    std::string_view _name;
 };
 
@@ -57,6 +63,6 @@ struct Tileset
 [[nodiscard]] const Tileset& tileset();
 
 /// \brief a solver for a city of size.x * size.z blocks and size.y layers (at least 2), with the layer rules applied.
-[[nodiscard]] std::expected<tinywfc::Solver, tinywfc::Error> makeSolver(const tinywfc::Size& size, uint64_t seed);
+[[nodiscard]] std::expected<tinywfc::Solver, tinywfc::Error> makeSolver(const tinywfc::Size& size, uint64_t seed, int32_t threads = 1);
 
 }  // namespace city

@@ -10,6 +10,8 @@ TEST_CASE("city: every seed produces a valid city")
 {
    const auto& set = city::tileset();
    auto total_backtracks = 0;
+   auto deck_count = 0;
+   auto ramp_count = 0;
    for (uint64_t seed = 0; seed < 12; ++seed)
    {
       const tinywfc::Size size{14, 5, 14};
@@ -39,12 +41,32 @@ TEST_CASE("city: every seed produces a valid city")
                }
             }
 
-            // a building column is building, floors, one roof, then air
+            // a building column is building, floors, one roof, then air; elsewhere an elevated road may sit right on
+            // the ground tile, a deck on a pillar or a ramp top on a ramp, and nothing floats above
             const auto& ground = set._tiles[*solver->tile({x, 0, z})];
             auto roof_seen = ground._kind != city::Kind::Building;
+            const auto& first = set._tiles[*solver->tile({x, 1, z})];
+            if (first._kind == city::Kind::Deck)
+            {
+               CHECK_MESSAGE(ground._pillar, "seed {}: deck at {} {} without a pillar", seed, x, z);
+            }
+            if (first._kind == city::Kind::RampTop)
+            {
+               CHECK(ground._kind == city::Kind::Ramp && ground._quarter_turns == first._quarter_turns);
+            }
+            if (ground._pillar)
+            {
+               CHECK(first._kind == city::Kind::Deck);
+            }
+            deck_count += first._kind == city::Kind::Deck ? 1 : 0;
+            ramp_count += first._kind == city::Kind::RampTop ? 1 : 0;
             for (auto y = 1; y < size.y; ++y)
             {
                const auto kind = set._tiles[*solver->tile({x, y, z})]._kind;
+               if (y == 1 && (kind == city::Kind::Deck || kind == city::Kind::RampTop))
+               {
+                  continue;
+               }
                if (roof_seen)
                {
                   CHECK_MESSAGE(kind == city::Kind::Air, "seed {} column {} {} layer {}", seed, x, z, y);
@@ -59,7 +81,8 @@ TEST_CASE("city: every seed produces a valid city")
          }
       }
    }
-   std::println("   {} backtracks over 12 cities", total_backtracks);
+   std::println("   {} backtracks, {} deck and {} ramp tiles over 12 cities", total_backtracks, deck_count, ramp_count);
+   CHECK(deck_count > 0 && ramp_count > 0);
 }
 
 TEST_CASE("city: roads connect")

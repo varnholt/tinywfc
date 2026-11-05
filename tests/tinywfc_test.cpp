@@ -345,6 +345,37 @@ TEST_CASE("callbacks report every collapse")
    CHECK(resets == solver->statistics()._backtracks + solver->statistics()._restarts);
 }
 
+TEST_CASE("priorities set the order of observation")
+{
+   // four tiles that fit anywhere, so every collapse is a decision of its own
+   tinywfc::Rules rules{4};
+   for (TileId a = 0; a < 4; ++a)
+   {
+      for (TileId b = 0; b < 4; ++b)
+      {
+         rules.allowEverywhere(a, b);
+      }
+   }
+   auto solver = tinywfc::Solver::create(rules, {._size = {5, 4, 5}, ._seed = 8});
+   for (auto y = 0; y < 4; ++y)
+   {
+      for (auto z = 0; z < 5; ++z)
+      {
+         for (auto x = 0; x < 5; ++x)
+         {
+            CHECK(solver->setPriority({x, y, z}, y * 10.0).has_value());
+         }
+      }
+   }
+   CHECK(solver->setPriority({5, 0, 0}, 1.0).error() == tinywfc::Error::InvalidCoordinate);
+
+   std::vector<int32_t> layers;
+   solver->setCollapseCallback([&](const Coordinate& cell, TileId) { layers.push_back(cell.y); });
+   CHECK(solver->run().has_value());
+   CHECK(layers.size() == 100u);
+   CHECK(std::ranges::is_sorted(layers));
+}
+
 TEST_CASE("stepping one cell at a time")
 {
    auto solver = tinywfc::Solver::create(landAndSea(), {._size = {8, 1, 8}, ._seed = 2});

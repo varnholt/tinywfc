@@ -8,7 +8,7 @@ project(
     LANGUAGES CXX)
 
 option(TINYWFC_BUILD_TESTS "Build the tests" ${PROJECT_IS_TOP_LEVEL})
-option(TINYWFC_BUILD_TESTBED "Build the OpenGL ES 3 / WebGL2 city testbed (fetches GLFW and Dear ImGui)" OFF)
+option(TINYWFC_BUILD_TESTBED "Build the OpenGL ES 3 / WebGL2 city testbed (fetches SDL3 and Dear ImGui)" ${PROJECT_IS_TOP_LEVEL})
 option(TINYWFC_INSTALL "Generate the install target" ${PROJECT_IS_TOP_LEVEL})
 
 include(GNUInstallDirs)

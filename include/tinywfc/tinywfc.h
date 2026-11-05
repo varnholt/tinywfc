@@ -384,6 +384,27 @@ public:
       return propagate() ? std::expected<void, Error>{} : std::unexpected{Error::Contradiction};
    }
 
+   /// \brief steers the order of observation: the next cell is the open one with the lowest priority + entropy. all
+   ///        cells start at 0. a priority that grows with y builds layer by layer, one that grows with the distance to
+   ///        a point grows the result outwards from there.
+   std::expected<void, Error> setPriority(const Coordinate& coordinate, double priority)
+   {
+      if (!contains(coordinate))
+      {
+         return std::unexpected{Error::InvalidCoordinate};
+      }
+      if (_priorities.empty())
+      {
+         _priorities.assign(cellCount(), 0.0);
+      }
+      _priorities[cellIndex(coordinate)] = priority;
+      if (!_noise.empty())
+      {
+         rebuildHeap();
+      }
+      return {};
+   }
+
    /// \brief rules out one tile in a cell.
    std::expected<void, Error> ban(const Coordinate& coordinate, TileId tile)
    {
@@ -873,7 +894,8 @@ private:
    {
       const auto weight_sum = _state._weight_sums[cell];
       // shannon entropy of the weighted distribution, plus a little noise that breaks ties without favoring a corner
-      return std::log(weight_sum) - _state._weight_log_sums[cell] / weight_sum + _noise[cell];
+      const auto priority = _priorities.empty() ? 0.0 : _priorities[cell];
+      return priority + std::log(weight_sum) - _state._weight_log_sums[cell] / weight_sum + _noise[cell];
    }
 
    void pushHeap(std::size_t cell)
@@ -1249,6 +1271,7 @@ private:
    std::vector<Decision> _decisions;
    std::vector<HeapEntry> _heap;
    std::vector<double> _noise;
+   std::vector<double> _priorities;  //!< setPriority(); empty while every cell has priority 0
    Random _random;
    Statistics _statistics;
    CollapseCallback _collapse_callback;
