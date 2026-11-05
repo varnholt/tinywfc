@@ -1,6 +1,6 @@
 #pragma once
 
-// runs the solver away from the render loop. natively a std::jthread solves the city and queues every collapse; the
+// runs the solver away from the render loop. natively a worker thread (std::jthread) solves the city and queues every collapse; the
 // render thread plays the queue back at its own pace, so the ui never waits. a browser without threads gets the same
 // interface, with the solver advanced by a bounded number of steps per frame inside poll().
 
@@ -83,7 +83,7 @@ private:
    std::chrono::steady_clock::time_point _start_time;
 
 #if TINYWFC_TESTBED_THREADS
-   std::jthread _worker;
+   tinywfc::detail::JoiningThread _worker;  // std::jthread where the standard library has it
 #else
    std::optional<tinywfc::Solver> _solver;
 #endif

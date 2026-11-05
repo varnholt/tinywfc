@@ -55,6 +55,100 @@ inline constexpr int32_t version_patch = 0;
 
 using TileId = uint32_t;
 
+namespace detail
+{
+
+#if defined(__cpp_lib_jthread) && !defined(TINYWFC_NO_STD_JTHREAD)
+using StopSource = std::stop_source;
+using StopToken = std::stop_token;
+using JoiningThread = std::jthread;
+#else
+// libc++ (apple clang) keeps jthread and stop_token behind its experimental flag; these do the part tinywfc needs
+
+class StopToken
+{
+public:
+   StopToken() = default;
+   explicit StopToken(std::shared_ptr<std::atomic<bool>> flag) : _flag(std::move(flag))
+   {
+   }
+
+   [[nodiscard]] bool stop_requested() const noexcept
+   {
+      return _flag && _flag->load();
+   }
+
+private:
+   std::shared_ptr<std::atomic<bool>> _flag;
+};
+
+class StopSource
+{
+public:
+   [[nodiscard]] StopToken get_token() const
+   {
+      return StopToken{_flag};
+   }
+
+   void request_stop() noexcept
+   {
+      if (_flag)
+      {
+         _flag->store(true);
+      }
+   }
+
+private:
+   std::shared_ptr<std::atomic<bool>> _flag{std::make_shared<std::atomic<bool>>(false)};
+};
+
+/// \brief a thread that asks its function to stop and joins when it is destroyed or replaced
+class JoiningThread
+{
+public:
+   JoiningThread() = default;
+
+   template <class Function>
+   explicit JoiningThread(Function&& function)
+       : _thread([function = std::forward<Function>(function), token = _source.get_token()]() mutable { function(token); })
+   {
+   }
+
+   JoiningThread(JoiningThread&&) noexcept = default;
+
+   JoiningThread& operator=(JoiningThread&& other) noexcept
+   {
+      finish();
+      _source = std::move(other._source);
+      _thread = std::move(other._thread);
+      return *this;
+   }
+
+   JoiningThread(const JoiningThread&) = delete;
+   JoiningThread& operator=(const JoiningThread&) = delete;
+
+   ~JoiningThread()
+   {
+      finish();
+   }
+
+private:
+   void finish()
+   {
+      _source.request_stop();
+      if (_thread.joinable())
+      {
+         _thread.join();
+      }
+   }
+
+   StopSource _source;  // declared first: the thread's token comes from it
+   std::thread _thread;
+};
+#endif
+
+}  // namespace detail
+
 // ----------------------------------------------------------------------------------------------------
 // grid geometry
 // ----------------------------------------------------------------------------------------------------
@@ -1133,7 +1227,7 @@ private:
    }
 
    /// \return true when the attempt finished the grid, false on a contradiction or a stop request
-   bool runAttempt(std::stop_token stop)
+   bool runAttempt(detail::StopToken stop)
    {
       while (!stop.stop_requested())
       {
@@ -1155,7 +1249,7 @@ private:
    std::expected<void, Error> runParallel(int32_t thread_count, int32_t first_attempt)
    {
       const auto attempt_count = _settings._max_restarts + 1;
-      std::vector<std::stop_source> stops(static_cast<std::size_t>(attempt_count));
+      std::vector<detail::StopSource> stops(static_cast<std::size_t>(attempt_count));
       std::atomic<int32_t> next_attempt{first_attempt};
       std::atomic<int32_t> best_attempt{attempt_count};
       std::mutex mutex;
@@ -1167,11 +1261,11 @@ private:
       prototype._reset_callback = nullptr;
 
       {
-         std::vector<std::jthread> pool;
+         std::vector<detail::JoiningThread> pool;
          for (auto worker = 0; worker < std::min(thread_count, attempt_count - first_attempt); ++worker)
          {
             pool.emplace_back(
-               [&](std::stop_token pool_stop)
+               [&](detail::StopToken pool_stop)
                {
                   while (!pool_stop.stop_requested())
                   {

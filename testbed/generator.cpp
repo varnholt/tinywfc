@@ -92,19 +92,19 @@ void Generator::start(const tinywfc::Size& size, uint64_t seed)
    }
 
 #if TINYWFC_TESTBED_THREADS
-   _worker = std::jthread{[this, size, seed](std::stop_token stop)
-                          {
-                             auto solver = city::makeSolver(size, seed);
-                             if (!solver)
-                             {
-                                push({Event::Type::Failed});
-                                return;
-                             }
-                             attach(*solver);
-                             while (!stop.stop_requested() && advance(*solver))
-                             {
-                             }
-                          }};
+   _worker = tinywfc::detail::JoiningThread{[this, size, seed](tinywfc::detail::StopToken stop)
+                                            {
+                                               auto solver = city::makeSolver(size, seed);
+                                               if (!solver)
+                                               {
+                                                  push({Event::Type::Failed});
+                                                  return;
+                                               }
+                                               attach(*solver);
+                                               while (!stop.stop_requested() && advance(*solver))
+                                               {
+                                               }
+                                            }};
 #else
    _solver.reset();
    auto solver = city::makeSolver(size, seed);
