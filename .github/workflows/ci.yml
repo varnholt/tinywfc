@@ -1,0 +1,151 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  library:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows MSVC
+            os: windows-latest
+            configure: ""
+          - name: Linux GCC 14
+            os: ubuntu-24.04
+            configure: -DCMAKE_CXX_COMPILER=g++-14
+          - name: Linux Clang 20
+            os: ubuntu-24.04
+            configure: -DCMAKE_CXX_COMPILER=clang++-20
+          - name: macOS AppleClang
+            os: macos-15
+            configure: ""
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Clang 20
+        if: contains(matrix.configure, 'clang++-20')
+        run: |
+          wget -q https://apt.llvm.org/llvm.sh
+          sudo bash llvm.sh 20
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DTINYWFC_BUILD_TESTBED=OFF ${{ matrix.configure }}
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure --verbose
+
+      - name: Benchmark (one run each)
+        shell: bash
+        run: |
+          bench=build/bench/tinywfc_bench
+          [ -f build/bench/Release/tinywfc_bench.exe ] && bench=build/bench/Release/tinywfc_bench.exe
+          "$bench" --runs 1 --threads 0
+
+      - name: Install and consume with find_package, header only
+        shell: bash
+        run: |
+          cmake --install build --config Release --prefix "$PWD/prefix"
+          # the package is the header and its cmake files, nothing else
+          unexpected=$(cd prefix && find . -type f | grep -v -E '^\./include/tinywfc/tinywfc\.h$|^\./share/cmake/tinywfc/' || true)
+          if [ -n "$unexpected" ]; then echo "unexpected installed files: $unexpected"; exit 1; fi
+          cmake -S tests/package_consumer -B consumer -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$PWD/prefix" ${{ matrix.configure }}
+          cmake --build consumer --config Release
+          if [ -f consumer/Release/consumer.exe ]; then consumer/Release/consumer.exe; else consumer/consumer; fi
+
+  testbed-windows:
+    name: Testbed (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build -DTINYWFC_BUILD_TESTS=OFF -DTINYWFC_BUILD_TESTBED=ON
+
+      - name: Build
+        run: cmake --build build --config Release --parallel --target tinywfc_testbed
+
+  testbed-linux:
+    name: Testbed (Linux, Mesa)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install SDL3 build dependencies and Mesa
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev \
+            libxkbcommon-dev libwayland-dev wayland-protocols libegl-dev libgles-dev libgl1-mesa-dri xvfb
+
+      - name: Build
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++-14 -DTINYWFC_BUILD_TESTS=OFF -DTINYWFC_BUILD_TESTBED=ON
+          cmake --build build --parallel --target tinywfc_testbed
+
+      - name: Render a city with software OpenGL ES
+        continue-on-error: true
+        env:
+          LIBGL_ALWAYS_SOFTWARE: 1
+        run: xvfb-run -a ./build/testbed/tinywfc_testbed --seed 3 --size 960x540 --screenshot city.png --ui
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: testbed-screenshot
+          path: city.png
+          if-no-files-found: ignore
+
+  web:
+    name: Web (Emscripten, WebGL2)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 4.0.10
+
+      - name: Build
+        run: |
+          emcmake cmake -S . -B build-web -DCMAKE_BUILD_TYPE=Release -DTINYWFC_BUILD_TESTS=OFF -DTINYWFC_INSTALL=OFF -DTINYWFC_BUILD_TESTBED=ON
+          cmake --build build-web --parallel --target tinywfc_testbed
+
+      - name: Collect the page
+        run: |
+          mkdir site
+          cp build-web/testbed/tinywfc_testbed.html site/index.html
+          cp build-web/testbed/tinywfc_testbed.js build-web/testbed/tinywfc_testbed.wasm site/
+          ls -l site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: web
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

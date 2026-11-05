@@ -25,7 +25,12 @@ if(TINYWFC_BUILD_TESTS OR TINYWFC_BUILD_TESTBED)
     if(MSVC)
         target_compile_options(tinywfc_warnings INTERFACE /W4 /WX /permissive- /utf-8)
     else()
-        target_compile_options(tinywfc_warnings INTERFACE -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror)
+        # partially designated initializers like {._size = ..., ._seed = ...} are the intended way to fill settings
+        target_compile_options(tinywfc_warnings INTERFACE -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
+                                                          -Wno-missing-field-initializers)
+        if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19)
+            target_compile_options(tinywfc_warnings INTERFACE -Wno-missing-designated-field-initializers)
+        endif()
     endif()
 endif()
 
