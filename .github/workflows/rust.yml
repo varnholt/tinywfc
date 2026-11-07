@@ -22,7 +22,7 @@ jobs:
       - run: cargo test --all-targets
       - run: cargo test --doc
       - run: cargo check --target wasm32-unknown-unknown --lib
-      - run: cargo package --allow-dirty
+      - run: cargo publish --dry-run --allow-dirty
   msrv:
     runs-on: ubuntu-latest
     defaults:

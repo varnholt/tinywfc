@@ -27,7 +27,7 @@ tinywfc = "0.1"
 
 The crate lives alongside the C++ implementation in `rust/`. To use a local checkout, replace the version with `{ path = "/path/to/tinywfc/rust" }`.
 
-[crates.io](https://crates.io/crates/tinywfc) · [API documentation](https://docs.rs/tinywfc)
+[crates.io](https://crates.io/crates/tinywfc) | [API documentation](https://docs.rs/tinywfc)
 
 ## Rules and solving
 
