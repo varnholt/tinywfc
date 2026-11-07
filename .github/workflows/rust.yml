@@ -1,0 +1,47 @@
+name: Rust
+on:
+  push:
+  pull_request:
+jobs:
+  rust:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test --all-targets
+      - run: cargo test --doc
+      - run: cargo check --target wasm32-unknown-unknown --lib
+      - run: cargo package --allow-dirty
+  msrv:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.85.0
+      - run: cargo check --all-targets
+  cpp-parity:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: sudo apt-get update && sudo apt-get install -y g++-14
+      - run: python3 tools/generate_reference.py
+        env:
+          CXX: g++-14
+      - run: cargo test --test cpp_parity
