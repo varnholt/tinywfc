@@ -173,6 +173,8 @@ Requirements: CMake 3.25 and a C++23 compiler; CI builds with MSVC, GCC 14, Clan
 
 ## Rust
 
+**[Interactive Rust demo](https://varnholt.github.io/tinywfc/rust/)** — [native and browser build instructions](rust/demo/README.md).
+
 [`rust/`](rust/README.md) contains the native `tinywfc` Rust crate: no dependencies and no C++ toolchain required. It includes examples, tests against the C++ implementation, and Cargo packaging. See the [Rust README](rust/README.md) for the API and local installation.
 
 ## License
