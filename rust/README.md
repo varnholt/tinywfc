@@ -1,5 +1,7 @@
 # tinywfc
 
+**[Interactive Rust demo](https://varnholt.github.io/tinywfc/rust/)** — [run it natively or build for the browser](demo/README.md).
+
 Native Rust tiled wave function collapse on 2D and 3D grids. No dependencies, no C++ toolchain, and no unsafe code. MIT licensed. Requires Rust 1.85 or newer.
 
 ```rust

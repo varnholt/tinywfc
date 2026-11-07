@@ -1,0 +1,7 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><meta name="theme-color" content="#101724"><title>tinywfc · Rust demo</title><style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0c121c;color:#dce6ef;font:16px system-ui,sans-serif}canvas{display:block;width:100%;height:100%}#loading{position:absolute;inset:0;display:grid;place-content:center;gap:12px;padding:30px;text-align:center}#loading strong{font-size:30px;color:#66dbc6}#loading small{color:#94a5b8}
+</style></head><body><canvas id="canvas" aria-label="tinywfc interactive Rust demo"></canvas><div id="loading"><strong>tinywfc</strong><span>Loading the Rust demo…</span><small>Requires WebAssembly and WebGL 2.</small></div><script type="module">
+import init from './pkg/app.js';
+init().catch(error=>{document.getElementById('loading').textContent='Could not load the demo: '+error;console.error(error);});
+</script></body></html>

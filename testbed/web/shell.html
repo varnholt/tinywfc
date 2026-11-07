@@ -11,12 +11,14 @@
       #status { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
       #source { position: fixed; right: 12px; bottom: 10px; color: #1d4f7a; text-decoration: none; }
       #source:hover { text-decoration: underline; }
+      #rust-demo { position: fixed; left: 12px; bottom: 10px; color: #66dbc6; background: #14202ddd; padding: 6px 10px; border-radius: 5px; text-decoration: none; }
    </style>
 </head>
 <body>
    <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
    <div id="status">loading...</div>
    <a id="source" href="https://github.com/varnholt/tinywfc" target="_blank" rel="noopener">tinywfc on GitHub</a>
+   <a id="rust-demo" href="rust/">Try the Rust demo</a>
    <script>
       const status = document.getElementById("status");
       if (!document.createElement("canvas").getContext("webgl2")) {
