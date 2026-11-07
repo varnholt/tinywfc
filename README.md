@@ -171,6 +171,10 @@ Requirements: CMake 3.25 and a C++23 compiler; CI builds with MSVC, GCC 14, Clan
 - the overlapping model, which learns the rules from a sample image
 - terrain slopes and stairs in the city
 
+## Rust
+
+[`rust/`](rust/README.md) contains the native `tinywfc` Rust crate: no dependencies and no C++ toolchain required. It includes examples, tests against the C++ implementation, and Cargo packaging. See the [Rust README](rust/README.md) for the API and local installation.
+
 ## License
 
 MIT, see [LICENSE](LICENSE).

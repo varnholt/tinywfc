@@ -1,0 +1,14 @@
+[package]
+name = "tinywfc"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+description = "Deterministic 2D and 3D tiled wave function collapse"
+license = "MIT"
+repository = "https://github.com/varnholt/tinywfc"
+readme = "README.md"
+keywords = ["wfc", "procedural", "generation", "gamedev"]
+include = ["src/**", "examples/**", "tests/**", "tools/**", "Cargo.toml", "README.md", "LICENSE"]
+
+[lints.rust]
+unsafe_code = "forbid"
