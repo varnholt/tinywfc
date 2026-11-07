@@ -16,8 +16,8 @@ The demo uses Rust **1.95** and eframe 0.36.2. The library still supports Rust 1
 From the repository root:
 
 ```sh
-rustup toolchain install 1.95
-cargo +1.95 run --release --manifest-path rust/demo/Cargo.toml
+rustup toolchain install 1.95.0
+cargo +1.95.0 run --release --manifest-path rust/demo/Cargo.toml
 ```
 
 Linux also needs windowing libraries, for example `libxkbcommon-dev`, `libwayland-dev`, `libx11-dev`, `libgl1-mesa-dev` and `libegl1-mesa-dev` on Ubuntu. Rendering uses OpenGL on native platforms and WebGL 2 in browsers.
@@ -25,8 +25,8 @@ Linux also needs windowing libraries, for example `libxkbcommon-dev`, `libwaylan
 ## Build for the browser
 
 ```sh
-rustup target add wasm32-unknown-unknown --toolchain 1.95
-cargo +1.95 install wasm-bindgen-cli --version 0.2.130 --locked
+rustup target add wasm32-unknown-unknown --toolchain 1.95.0
+cargo +1.95.0 install wasm-bindgen-cli --version 0.2.130 --locked
 python rust/demo/tools/build_web.py
 python -m http.server 8080 --directory rust/demo/dist
 ```
@@ -36,9 +36,9 @@ Open `http://localhost:8080/`. The generated `dist/` directory is a standalone s
 ## Verify
 
 ```sh
-cargo +1.95 fmt --manifest-path rust/demo/Cargo.toml --check
-cargo +1.95 clippy --manifest-path rust/demo/Cargo.toml --locked --all-targets -- -D warnings
-cargo +1.95 test --manifest-path rust/demo/Cargo.toml --locked
+cargo +1.95.0 fmt --manifest-path rust/demo/Cargo.toml --check
+cargo +1.95.0 clippy --manifest-path rust/demo/Cargo.toml --locked --all-targets -- -D warnings
+cargo +1.95.0 test --manifest-path rust/demo/Cargo.toml --locked
 ```
 
 CI builds and tests native demos on Linux, Windows and macOS, builds the browser application, and exercises rendered scenes and pointer input in headless Chromium. Browser screenshots are uploaded as CI artifacts. Core library tests remain independent of the demo.

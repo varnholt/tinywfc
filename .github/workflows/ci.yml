@@ -168,7 +168,7 @@ jobs:
         working-directory: rust/demo
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.95
+      - uses: dtolnay/rust-toolchain@1.95.0
         with:
           components: clippy, rustfmt
       - name: Linux windowing dependencies
@@ -196,7 +196,7 @@ jobs:
         working-directory: rust/demo
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.95
+      - uses: dtolnay/rust-toolchain@1.95.0
         with:
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
